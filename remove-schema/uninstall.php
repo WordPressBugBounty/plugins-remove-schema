@@ -1,31 +1,32 @@
 <?php
-
 /**
- * Fired when the plugin is uninstalled.
+ * Uninstall Remove Schema.
  *
- * When populating this file, consider the following flow
- * of control:
- *
- * - This method should be static
- * - Check if the $_REQUEST content actually is the plugin name
- * - Run an admin referrer check to make sure it goes through authentication
- * - Verify the output of $_GET makes sense
- * - Repeat with other user roles. Best directly by using the links/query string parameters.
- * - Repeat things for multisite. Once for a single site in the network, once sitewide.
- *
- * This file may be updated more in future version of the Boilerplate; however, this is the
- * general skeleton and outline for how the file should work.
- *
- * For more information, see the following discussion:
- * https://github.com/tommcfarlin/WordPress-Plugin-Boilerplate/pull/123#issuecomment-28541913
- *
- * @link       https://plugin.nl/
- * @since      1.0.0
- *
- * @package    Remove_Schema
+ * @package TimVanIersel\RemoveSchema
  */
 
-// If uninstall not called from WordPress, then exit.
+declare(strict_types=1);
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
+}
+
+$remove_schema_autoload_loaded = false;
+
+foreach ( array( 'vendor/autoload.php', 'autoload.php' ) as $remove_schema_autoload ) {
+	$remove_schema_autoload_path = __DIR__ . '/' . $remove_schema_autoload;
+
+	if ( file_exists( $remove_schema_autoload_path ) ) {
+		require $remove_schema_autoload_path;
+		$remove_schema_autoload_loaded = true;
+		break;
+	}
+}
+
+if ( $remove_schema_autoload_loaded ) {
+	TimVanIersel\RemoveSchema\Lifecycle\Uninstaller::uninstall();
 }

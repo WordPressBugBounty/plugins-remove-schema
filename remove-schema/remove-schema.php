@@ -1,55 +1,72 @@
 <?php
-
 /**
- * The plugin bootstrap file
- *
- * This file is read by WordPress to generate the plugin information in the plugin
- * admin area. This file also includes all of the dependencies used by the plugin,
- * registers the activation and deactivation functions, and defines a function
- * that starts the plugin.
- *
- * @link              https://plugin.nl/
- * @since             1.0.0
- * @package           Remove_Schema
- *
- * @wordpress-plugin
  * Plugin Name:       Remove Schema
- * Plugin URI:        https://plugin.nl/en/remove-schema-plugin/
- * Description:       Remove all Microdata, RDFa and/or JSON-ld that you don’t want on your page.
- * Version:           1.6.2
- * Author:            Plugin.nl
- * Author URI:        https://plugin.nl/en/remove-schema-plugin/
- * License:           GPL-2.0+
- * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
+ * Plugin URI:        https://plugin.nl/remove-schema
+ * Description:       Remove all Schema Markup / Structured data (Microdata, RDFa and/or JSON-ld) that you don’t want on your site.
+ * Version:           2.0.0
+ * Requires at least: 6.8
+ * Requires PHP:      8.2
+ * Author:            Tim van Iersel
+ * Author URI:        https://plugin.nl
+ * License:           GPL-2.0-or-later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       remove-schema
  * Domain Path:       /languages
- */
-
-// If this file is called directly, abort.
-if ( ! defined( 'WPINC' ) ) {
-	die;
-}
-
-/**
- * Currently plugin version.
- */
-define( 'REMOVE_SCHEMA_VERSION', '1.6.2' );
-
-/**
- * The core plugin class that is used to define internationalization,
- * admin-specific hooks, and public-facing site hooks.
- */
-require plugin_dir_path( __FILE__ ) . 'includes/class-remove-schema.php';
-
-/**
- * Begins execution of the plugin.
  *
- * @since    1.0.0
+ * @package TimVanIersel\RemoveSchema
  */
-function run_remove_schema() {
 
-	$plugin = new Remove_Schema();
-	$plugin->run();
+declare(strict_types=1);
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
-run_remove_schema();
+
+define( 'REMOVE_SCHEMA_VERSION', '2.0.0' );
+define( 'REMOVE_SCHEMA_FILE', __FILE__ );
+define( 'REMOVE_SCHEMA_PATH', plugin_dir_path( __FILE__ ) );
+define( 'REMOVE_SCHEMA_URL', plugin_dir_url( __FILE__ ) );
+define( 'REMOVE_SCHEMA_BASENAME', plugin_basename( __FILE__ ) );
+
+$remove_schema_autoload_loaded = false;
+
+foreach ( array( 'vendor/autoload.php', 'autoload.php' ) as $remove_schema_autoload ) {
+	$remove_schema_autoload_path = REMOVE_SCHEMA_PATH . $remove_schema_autoload;
+
+	if ( file_exists( $remove_schema_autoload_path ) ) {
+		require $remove_schema_autoload_path;
+		$remove_schema_autoload_loaded = true;
+		break;
+	}
+}
+
+if ( ! $remove_schema_autoload_loaded ) {
+	add_action( 'admin_notices', 'remove_schema_render_missing_autoloader_notice' );
+	return;
+}
+
+register_activation_hook( __FILE__, array( TimVanIersel\RemoveSchema\Lifecycle\Activator::class, 'activate' ) );
+register_deactivation_hook( __FILE__, array( TimVanIersel\RemoveSchema\Lifecycle\Deactivator::class, 'deactivate' ) );
+
+TimVanIersel\RemoveSchema\Plugin::boot();
+
+/**
+ * Render an admin notice when no autoloader is available.
+ */
+function remove_schema_render_missing_autoloader_notice(): void {
+	if ( ! current_user_can( 'activate_plugins' ) ) {
+		return;
+	}
+	?>
+	<div class="notice notice-error">
+		<p>
+			<?php
+			echo esc_html__(
+				'Remove Schema is missing its autoloader. Reinstall the plugin or run "composer install" before activating the source checkout.',
+				'remove-schema'
+			);
+			?>
+		</p>
+	</div>
+	<?php
+}
